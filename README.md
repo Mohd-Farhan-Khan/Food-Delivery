@@ -2,7 +2,7 @@
 
 A modern, responsive food delivery web application built with React and Vite. This application allows users to browse through various food items, add them to cart, and place orders.
 
-![Food Delivery App](/Users/farhan/Developer/Food-Delivery/frontend/public/header_img.png)
+![Food Delivery App](frontend/public/header_img.png)
 
 ## Table of Contents
 
