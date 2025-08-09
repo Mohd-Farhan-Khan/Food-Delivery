@@ -52,3 +52,9 @@ Thumbs.db
 # Backend specific
 backend/node_modules
 backend/.env
+
+# Uploaded files (do not commit user uploads)
+backend/uploads/
+
+# Keep an empty placeholder so the dir exists
+!backend/uploads/.gitkeep
