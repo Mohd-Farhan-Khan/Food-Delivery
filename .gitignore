@@ -52,6 +52,8 @@ Thumbs.db
 # Backend specific
 backend/node_modules
 backend/.env
+frontend/.env
+admin/.env
 
 # Uploaded files (do not commit user uploads)
 # Keep directory but ignore its contents except placeholder
