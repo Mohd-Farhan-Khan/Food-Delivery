@@ -1,6 +1,6 @@
 # Food Delivery Application
 
-A modern, responsive food delivery web application built with React and Vite. This application allows users to browse through various food items, add them to cart, and place orders.
+A modern, responsive full‑stack food delivery web application. Users can browse food items, add them to a cart, and (future) place orders. An admin panel lets administrators manage the food catalog (create/list/delete). The backend persists data in MongoDB via Mongoose and supports image uploads with Multer.
 
 ![Food Delivery App](frontend/public/header_img.png)
 
@@ -29,13 +29,21 @@ A modern, responsive food delivery web application built with React and Vite. Th
 
 ## Tech Stack
 
-- **Frontend**:
-  - React 19
-  - React Router 7
-  - CSS (with component-scoped styling)
-  - Vite (for fast development and optimized builds)
+- **Frontend (User App)**:
+   - React 19
+   - React Router 7
+   - Vite
+   - Context API for state
+- **Admin Panel**:
+   - React 19 + Vite (separate app under `admin/`)
 - **Backend**:
-  - Backend implementation is planned but not yet implemented
+   - Node.js + Express
+   - MongoDB Atlas (or self‑hosted) via Mongoose
+   - Multer (disk storage) for image uploads
+   - CORS, JSON body parsing
+- **Tooling / Other**:
+   - dotenv for environment variables
+   - Static file serving for uploaded images
 
 ## Project Structure
 
@@ -43,32 +51,38 @@ The project follows a component-based architecture with the following structure:
 
 ```
 Food-Delivery/
-├── frontend/                  # Frontend React application
-│   ├── public/                # Public assets
-│   ├── src/                   # Source code
-│   │   ├── assets/            # Images and static assets
-│   │   ├── components/        # Reusable UI components
-│   │   │   ├── AppDownload/   # App download promotion component
-│   │   │   ├── ExploreMenu/   # Menu category component
-│   │   │   ├── FoodDisplay/   # Food items display component
-│   │   │   ├── FoodItem/      # Individual food item component
-│   │   │   ├── Footer/        # Footer component
-│   │   │   ├── Header/        # Header component
-│   │   │   ├── LoginPopup/    # Login modal component
-│   │   │   └── Navbar/        # Navigation bar component
-│   │   ├── context/           # React context for state management
-│   │   ├── pages/             # Application pages
-│   │   │   ├── Cart/          # Shopping cart page
-│   │   │   ├── Home/          # Home page
-│   │   │   └── PlaceOrder/    # Order placement page
-│   │   ├── App.jsx            # Main application component
-│   │   ├── main.jsx           # Application entry point
-│   │   └── index.css          # Global styles
-│   ├── index.html             # HTML template
-│   ├── package.json           # Frontend dependencies and scripts
-│   └── vite.config.js         # Vite configuration
-└── backend/                   # Backend implementation (planned)
+├── frontend/                  # User-facing React application
+│   ├── public/
+│   └── src/
+├── admin/                     # Admin panel (manage food items)
+│   ├── public/
+│   └── src/
+├── backend/                   # Express + MongoDB API server
+│   ├── config/
+│   │   └── db.js              # Mongoose connection helper
+│   ├── controllers/
+│   │   └── foodController.js  # CRUD handlers for food items
+│   ├── models/
+│   │   └── foodModel.js       # Mongoose schema/model
+│   ├── routes/
+│   │   └── foodRoute.js       # Express router & multer setup
+│   ├── uploads/               # Stored image files (git-tracked dir, files ignored)
+│   └── server.js              # App entrypoint
+├── .env.example               # Sample environment variables (no secrets)
+└── README.md
 ```
+
+### Database Schema (Food Item)
+
+| Field       | Type   | Required | Description              |
+|-------------|--------|----------|--------------------------|
+| name        | String | Yes      | Display name             |
+| description | String | Yes      | Short description        |
+| price       | Number | Yes      | Price in chosen currency |
+| image       | String | Yes      | Stored filename          |
+| category    | String | Yes      | Category (e.g. Salad)    |
+
+Images are uploaded via `multipart/form-data` (field name: `image`) and saved to `backend/uploads/` with a timestamp prefix.
 
 ## Installation
 
@@ -78,24 +92,50 @@ Food-Delivery/
    cd Food-Delivery
    ```
 
-2. Install frontend dependencies:
+2. Install dependencies (frontend, admin, backend):
    ```bash
-   cd frontend
-   npm install
+   cd frontend && npm install && cd ..
+   cd admin && npm install && cd ..
+   cd backend && npm install && cd ..
    ```
 
-## Usage
-
-1. Start the development server:
+3. Copy environment template and configure:
    ```bash
+   cp .env.example .env        # or create backend/.env if you scope it there
+   # Edit MONGODB_URI with your credentials
+   ```
+
+4. Start backend API server:
+   ```bash
+   cd backend
+   npm start
+   # Server: http://localhost:4000
+   ```
+
+5. In another terminal, start frontend user app:
+   ```bash
+   cd frontend
    npm run dev
    ```
 
+6. (Optional) start admin panel:
+   ```bash
+   cd admin
+   npm run dev
+   ```
+
+## Usage (Frontend Build Scripts)
+
+From within `frontend/` or `admin/`:
+
+1. Development server:
+   ```bash
+   npm run dev
+   ```
 2. Build for production:
    ```bash
    npm run build
    ```
-
 3. Preview production build:
    ```bash
    npm run preview
@@ -129,23 +169,46 @@ State management is handled using React Context API through the `StoreContext` w
 - Add/remove cart functionality
 - Cart total calculation
 
-## Routes
+## API (Backend)
 
-The application uses React Router for navigation with the following routes:
+Base URL (dev): `http://localhost:4000`
 
-- `/` - Home page
-- `/cart` - Shopping cart page
-- `/order` - Order placement page
+| Method | Endpoint        | Description                 | Body / Params                      |
+|--------|-----------------|-----------------------------|------------------------------------|
+| POST   | /api/food/add   | Add a new food item         | multipart/form-data: name, description, price, category, image(file) |
+| GET    | /api/food/list  | List all food items         | –                                  |
+| DELETE | /api/food/remove| Remove a food item          | JSON: `{ "id": "<foodId>" }`      |
+| GET    | /images/<file>  | Access uploaded image files | –                                  |
+
+Sample add request (curl):
+```bash
+curl -X POST http://localhost:4000/api/food/add \
+   -F "name=Pizza" \
+   -F "description=Cheesy" \
+   -F "price=9.99" \
+   -F "category=Main" \
+   -F "image=@/path/to/pizza.png"
+```
+
+## Environment Variables
+
+Create a `.env` (or `backend/.env`) with:
+```
+MONGODB_URI="mongodb+srv://USERNAME:PASSWORD@cluster-host/db-name"
+PORT=4000
+```
+
+Do NOT commit real credentials. The directory `backend/uploads/` keeps a `.gitkeep` so the folder exists, while actual uploaded files are ignored by `.gitignore`.
 
 ## Future Enhancements
 
-- Backend implementation with Node.js/Express
-- User authentication and profile management
-- Order history tracking
+- Authentication (JWT sessions for users/admin)
+- Order placement + persistence
 - Payment gateway integration
-- Real-time order tracking
-- Reviews and ratings system
-- Admin dashboard for restaurant owners
+- Real-time order status (WebSockets)
+- Reviews & ratings
+- Image storage offload to S3/Cloudinary
+- Admin role management & analytics
 
 ## Contributing
 
