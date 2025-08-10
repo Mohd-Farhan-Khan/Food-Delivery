@@ -2,14 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import foodRouter from './routes/foodRoute.js';
+import userRouter from './routes/userRoute.js';
+import 'dotenv/config.js'; // Load environment variables from .env file
 
 // app config
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
 
 // middleware
 app.use(cors());    // backend can be accessed from frontend
 app.use(express.json());    // whenever we receive a request, it will parse the JSON
+app.use("/api/user", userRouter);
 
 // DB connection
 connectDB();
